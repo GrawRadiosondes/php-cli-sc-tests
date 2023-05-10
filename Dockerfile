@@ -3,7 +3,27 @@ FROM php:8.2-cli
 # apt update & apt-utils
 RUN apt-get update && apt-get install -y apt-utils
 
-# apt install php extension dependencies
+# allow nodejs lts to be installed via apt
+# https://github.com/nodesource/distributions#installation-instructions
+RUN curl -sL https://deb.nodesource.com/setup_lts.x  | bash -
+
+# install cypress dependencies
+# https://docs.cypress.io/guides/continuous-integration/introduction#Dependencies
+RUN apt-get install -y \
+    libgtk2.0-0 \
+    libgtk-3-0 \
+    libgbm-dev \
+    libnotify-dev \
+    libgconf-2-4 \
+    libnss3 \
+    libxss1 \
+    libasound2 \
+    libxtst6 \
+    xauth \
+    xvfb \
+    nodejs
+
+# install php extension dependencies
 RUN apt-get install -y \
     libzip-dev
 
