@@ -42,3 +42,6 @@ RUN echo xdebug.mode=coverage > /usr/local/etc/php/conf.d/xdebug.ini
 
 # clear apt cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# increase memory limit
+RUN echo 'memory_limit = 1G' >> "$PHP_INI_DIR/conf.d/memory-limit.ini";
