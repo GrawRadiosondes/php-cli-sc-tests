@@ -25,12 +25,13 @@ RUN apt-get install -y \
 
 # install php extension dependencies
 RUN apt-get install -y \
-    libzip-dev
+    libzip-dev \
+    libicu-dev
 
 # install php extensions
-RUN docker-php-ext-install \
-    pdo_mysql \
-    zip
+RUN docker-php-ext-install pdo_mysql
+RUN docker-php-ext-install zip
+RUN docker-php-ext-install intl
 
 # install composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
