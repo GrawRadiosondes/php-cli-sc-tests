@@ -41,6 +41,9 @@ RUN pecl install xdebug
 RUN docker-php-ext-enable xdebug
 RUN echo xdebug.mode=coverage > /usr/local/etc/php/conf.d/xdebug.ini
 
+# install git
+RUN apt-get install -y git
+
 # clear apt cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
