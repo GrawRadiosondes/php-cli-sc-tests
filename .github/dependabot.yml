@@ -4,8 +4,12 @@ updates:
     directory: "/"
     schedule:
       timezone: "Europe/Berlin"
-      interval: "daily"
+      interval: "weekly"
+      day: "wednesday"
       time: "07:00"
-    open-pull-requests-limit: 10
     assignees:
       - nikcani
+    groups:
+      docker:
+        patterns:
+          - "*"
