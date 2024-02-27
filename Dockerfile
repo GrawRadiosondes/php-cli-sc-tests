@@ -96,6 +96,7 @@ RUN apt install -y nginx
 RUN NONINTERACTIVE=1 && /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 RUN /home/linuxbrew/.linuxbrew/bin/brew install mkcert
 RUN /home/linuxbrew/.linuxbrew/bin/mkcert -install
+RUN update-ca-certificates --fresh
 RUN mkdir /etc/nginx/certs
 RUN /home/linuxbrew/.linuxbrew/bin/mkcert -key-file /etc/nginx/certs/soketi-key.pem -cert-file /etc/nginx/certs/soketi.pem soketi
 RUN /home/linuxbrew/.linuxbrew/bin/mkcert -key-file /etc/nginx/certs/localhost-key.pem -cert-file /etc/nginx/certs/localhost.pem localhost
