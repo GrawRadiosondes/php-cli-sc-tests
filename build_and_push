@@ -1,3 +1,17 @@
 #!/bin/bash
 
+clear
+
+# clone or pull the latest version
+readonly repo="sounding-center"
+if cd $repo
+then
+  git reset --hard HEAD
+  git pull
+  cd ..
+else
+  git clone "git@github.com:GrawRadiosondes/$repo.git"
+fi
+
+# build and push the image
 docker buildx build --platform linux/amd64 -t grawradiosondes/php-cli-sc-tests:latest --push .
