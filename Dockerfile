@@ -94,13 +94,11 @@ RUN apt install -y nginx
 
 # setup mkcert and generate certs
 RUN NONINTERACTIVE=1 && /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
 RUN /home/linuxbrew/.linuxbrew/bin/brew install mkcert
 RUN /home/linuxbrew/.linuxbrew/bin/mkcert -install
-RUN /home/linuxbrew/.linuxbrew/bin/mkcert soketi
 RUN mkdir /etc/nginx/certs
-RUN mv soketi.pem /etc/nginx/certs/
-RUN mv soketi-key.pem /etc/nginx/certs/
+RUN /home/linuxbrew/.linuxbrew/bin/mkcert -key-file /etc/nginx/certs/soketi-key.pem -cert-file /etc/nginx/certs/soketi.pem soketi
+RUN /home/linuxbrew/.linuxbrew/bin/mkcert -key-file /etc/nginx/certs/localhost-key.pem -cert-file /etc/nginx/certs/localhost.pem localhost
 
 # setup nginx as an https reverse proxy
 COPY sounding-center/infrastructure/sail/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
