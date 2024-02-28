@@ -100,7 +100,7 @@ RUN /home/linuxbrew/.linuxbrew/bin/mkcert -install
 RUN update-ca-certificates --fresh
 RUN mkdir /etc/nginx/certs
 RUN /home/linuxbrew/.linuxbrew/bin/mkcert -key-file /etc/nginx/certs/soketi-key.pem -cert-file /etc/nginx/certs/soketi.pem soketi
-RUN /home/linuxbrew/.linuxbrew/bin/mkcert -key-file /etc/nginx/certs/localhost-key.pem -cert-file /etc/nginx/certs/localhost.pem localhost
+RUN /home/linuxbrew/.linuxbrew/bin/mkcert -key-file /etc/nginx/certs/localhost-key.pem -cert-file /etc/nginx/certs/localhost.pem localhost coverage.localhost
 
 # setup nginx as an https reverse proxy
 COPY sounding-center/infrastructure/sail/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
