@@ -72,12 +72,9 @@ RUN echo xdebug.mode=coverage > /usr/local/etc/php/conf.d/xdebug.ini
 RUN echo 'memory_limit = 1G' >> "$PHP_INI_DIR/conf.d/memory-limit.ini";
 
 
-###############
-## setup soketi ##
-###############
-
-# install soketi and pm2 to run it
-RUN npm install -g pm2 @soketi/soketi
+########################################
+## setup nginx as https reverse proxy ##
+########################################
 
 # install nginx
 RUN apt install -y \
@@ -93,16 +90,18 @@ RUN echo "Package: *\nPin: origin nginx.org\nPin: release o=nginx\nPin-Priority:
 RUN apt update
 RUN apt install -y nginx
 
-# setup mkcert and generate certs
+# setup mkcert
 RUN NONINTERACTIVE=1 && /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 RUN /home/linuxbrew/.linuxbrew/bin/brew install mkcert
 RUN /home/linuxbrew/.linuxbrew/bin/mkcert -install
 RUN update-ca-certificates --fresh
+
+# generate certs
 RUN mkdir /etc/nginx/certs
 RUN /home/linuxbrew/.linuxbrew/bin/mkcert -key-file /etc/nginx/certs/soketi-key.pem -cert-file /etc/nginx/certs/soketi.pem soketi
 RUN /home/linuxbrew/.linuxbrew/bin/mkcert -key-file /etc/nginx/certs/localhost-key.pem -cert-file /etc/nginx/certs/localhost.pem localhost coverage.localhost
 
-# setup nginx as an https reverse proxy
+# configure nginx
 COPY sounding-center/infrastructure/sail/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
 COPY sounding-center/infrastructure/sail/nginx/conf.d/localhost.conf /etc/nginx/conf.d/localhost.conf
 COPY sounding-center/infrastructure/sail/nginx/conf.d/soketi.conf /etc/nginx/conf.d/soketi.conf
@@ -115,5 +114,4 @@ COPY sounding-center/infrastructure/sail/nginx/conf.d/soketi.conf /etc/nginx/con
 # clear apt cache
 RUN apt clean && rm -rf /var/lib/apt/lists/*
 
-# if soketi is needed, just run:
-# nginx && pm2 start soketi -- start
+# if the nginx https reverse proxy is needed, just run `nginx` to start the deamon
