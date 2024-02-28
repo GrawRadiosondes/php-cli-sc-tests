@@ -104,6 +104,7 @@ RUN /home/linuxbrew/.linuxbrew/bin/mkcert -key-file /etc/nginx/certs/localhost-k
 
 # setup nginx as an https reverse proxy
 COPY sounding-center/infrastructure/sail/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
+COPY sounding-center/infrastructure/sail/nginx/conf.d/localhost.conf /etc/nginx/conf.d/localhost.conf
 COPY sounding-center/infrastructure/sail/nginx/conf.d/soketi.conf /etc/nginx/conf.d/soketi.conf
 
 
