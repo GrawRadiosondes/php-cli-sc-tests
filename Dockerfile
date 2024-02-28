@@ -11,7 +11,7 @@ RUN apt install -y apt-utils
 # install git
 RUN apt install -y git
 
-# install nmap & tree (dev purposes)
+# install nmap & tree (debug purposes)
 RUN apt install -y nmap tree
 
 # install security lib e.g. needed by cypress and mkcert
