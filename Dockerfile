@@ -58,21 +58,11 @@ RUN curl -sL https://deb.nodesource.com/setup_22.x  | bash -
 RUN apt install -y nodejs
 
 
-#####################################
-## install playwright dependencies ##
-#####################################
+########################
+## install playwright ##
+########################
 
-RUN apt install -y libglib2.0-0t64
-RUN apt install -y libatk1.0-0t64
-RUN apt install -y libatk-bridge2.0-0t64
-RUN apt install -y libatspi2.0-0t64
-RUN apt install -y libxcomposite1
-RUN apt install -y libxdamage1
-RUN apt install -y libxfixes3
-RUN apt install -y libxrandr2
-RUN apt install -y libgbm1
-RUN apt install -y libxkbcommon0
-RUN apt install -y libasound2t64
+RUN npx playwright install --with-deps
 
 
 ########################################
