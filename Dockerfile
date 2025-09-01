@@ -40,10 +40,10 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 # install xdebug
 RUN pecl install xdebug
 RUN docker-php-ext-enable xdebug
-RUN echo xdebug.mode=coverage > /usr/local/etc/php/conf.d/xdebug.ini
+RUN echo xdebug.mode=coverage > "$PHP_INI_DIR/conf.d/xdebug.ini"
 
 # increase memory limit
-RUN echo 'memory_limit = 1G' >> "$PHP_INI_DIR/conf.d/memory-limit.ini";
+RUN echo 'memory_limit = 1G' >> "$PHP_INI_DIR/conf.d/memory-limit.ini"
 
 
 ##########################
