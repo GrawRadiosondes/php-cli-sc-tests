@@ -52,7 +52,7 @@ RUN echo 'memory_limit = 1G' >> "$PHP_INI_DIR/conf.d/memory-limit.ini"
 
 # allow nodejs lts to be installed via apt
 # https://github.com/nodesource/distributions#installation-instructions
-RUN curl -sL https://deb.nodesource.com/setup_22.x  | bash -
+RUN curl -sL https://deb.nodesource.com/setup_lts.x  | bash -
 
 # install nodejs
 RUN apt install -y nodejs
