@@ -21,11 +21,13 @@ RUN apt install -y nmap tree
 
 # install php extension dependencies
 RUN apt install -y libicu-dev
+RUN apt install -y libpng-dev
 RUN apt install -y libpq-dev
 RUN apt install -y libzip-dev
 
 # install php extensions
 RUN docker-php-ext-install bcmath
+RUN docker-php-ext-install gd
 RUN docker-php-ext-install intl
 RUN docker-php-ext-install mysqli
 RUN docker-php-ext-install pdo_mysql
