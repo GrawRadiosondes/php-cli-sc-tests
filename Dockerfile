@@ -21,6 +21,7 @@ RUN apt install -y nmap tree
 
 # install php extension dependencies
 RUN apt install -y libicu-dev
+RUN apt install -y libjpeg-dev
 RUN apt install -y libpng-dev
 RUN apt install -y libpq-dev
 RUN apt install -y libzip-dev
