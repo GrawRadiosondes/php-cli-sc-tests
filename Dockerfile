@@ -25,14 +25,15 @@ RUN apt install -y libpq-dev
 RUN apt install -y libzip-dev
 
 # install php extensions
-RUN docker-php-ext-install bcmath
-RUN docker-php-ext-install intl
-RUN docker-php-ext-install mysqli
-RUN docker-php-ext-install pdo_mysql
-RUN docker-php-ext-install pdo_pgsql
-RUN docker-php-ext-install pgsql
-RUN docker-php-ext-install sockets
-RUN docker-php-ext-install zip
+RUN docker-php-ext-install -j$(nproc) \
+    bcmath \
+    intl \
+    mysqli \
+    pdo_mysql \
+    pdo_pgsql \
+    pgsql \
+    sockets \
+    zip
 
 # install composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
