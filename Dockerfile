@@ -33,6 +33,7 @@ RUN docker-php-ext-install -j$(nproc) \
     gd \
     intl \
     mysqli \
+    pcntl \
     pdo_mysql \
     pdo_pgsql \
     pgsql \
