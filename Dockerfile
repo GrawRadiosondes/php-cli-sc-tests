@@ -52,23 +52,19 @@ RUN echo xdebug.mode=coverage > "$PHP_INI_DIR/conf.d/xdebug.ini"
 RUN echo 'memory_limit = 1G' >> "$PHP_INI_DIR/conf.d/memory-limit.ini"
 
 
-##########################
-## setup nodejs and npm ##
-##########################
+###############
+## setup bun ##
+###############
 
-# allow nodejs lts to be installed via apt
-# https://github.com/nodesource/distributions#installation-instructions
-RUN curl -sL https://deb.nodesource.com/setup_lts.x  | bash -
-
-# install nodejs
-RUN apt install -y nodejs
+COPY --from=oven/bun:latest /usr/local/bin/bun /usr/local/bin/bun
+RUN ln -s /usr/local/bin/bun /usr/local/bin/bunx
 
 
 ########################
 ## install playwright ##
 ########################
 
-RUN npx playwright install --with-deps
+RUN bunx playwright install --with-deps
 
 
 ########################################
