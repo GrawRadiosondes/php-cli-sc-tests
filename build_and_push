@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-
-clear
+set -euo pipefail
 
 # clone or pull the latest version
 readonly repo="sounding-center"
