@@ -3,8 +3,7 @@ set -euo pipefail
 
 # clone or pull the latest version
 readonly repo="sounding-center"
-if cd $repo
-then
+if cd $repo; then
   git reset --hard HEAD
   git pull
   cd ..
