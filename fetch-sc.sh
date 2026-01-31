@@ -10,6 +10,3 @@ if cd $repo; then
 else
   git clone "git@github.com:GrawRadiosondes/$repo.git"
 fi
-
-# build and push the image
-docker buildx build --platform linux/amd64 -t grawradiosondes/php-cli-sc-tests:latest --push .
