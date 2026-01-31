@@ -59,6 +59,10 @@ RUN echo 'memory_limit = 1G' >> "$PHP_INI_DIR/conf.d/memory-limit.ini"
 COPY --from=oven/bun:latest /usr/local/bin/bun /usr/local/bin/bun
 RUN ln -s /usr/local/bin/bun /usr/local/bin/bunx
 
+# node-gyp is required by tree-sitter
+RUN apt install -y python3
+RUN bun install -g node-gyp
+
 
 ########################
 ## install playwright ##
