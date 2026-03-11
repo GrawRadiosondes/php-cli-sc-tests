@@ -59,7 +59,9 @@ RUN echo 'memory_limit = 1G' >> "$PHP_INI_DIR/conf.d/memory-limit.ini"
 COPY --from=oven/bun:latest /usr/local/bin/bun /usr/local/bin/bun
 RUN ln -s /usr/local/bin/bun /usr/local/bin/bunx
 
-# node-gyp is required by tree-sitter
+# node-gyp is required by tree-sitter and needs python3 and nodejs/npm
+RUN curl -sL https://deb.nodesource.com/setup_lts.x  | bash -
+RUN apt install -y nodejs
 RUN apt install -y python3
 RUN bun install -g node-gyp
 
