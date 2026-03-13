@@ -78,7 +78,7 @@ in
       Env = [
         "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
         "CXXFLAGS=-std=c++20"
-        "PATH=${pkgs.lib.makeBinPath ([phpWithExts] ++ myPackages)}:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        "PATH=${pkgs.lib.makeBinPath ([phpWithExts] ++ myPackages)}:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:./vendor/bin"
       ];
     };
   }
