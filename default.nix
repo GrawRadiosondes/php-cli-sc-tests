@@ -47,6 +47,7 @@
     gcc
     git
     gnumake
+    mkcert
     nginx
     nodePackages.node-gyp
     nodejs
