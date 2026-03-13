@@ -14,16 +14,17 @@
         intl
         mysqli
         pcntl
+        pcov
         pdo_mysql
         pdo_pgsql
         pgsql
         sockets
         zip
-        xdebug
       ]);
     extraConfig = ''
       memory_limit = 1G
-      xdebug.mode = coverage
+      pcov.enabled = 1
+      pcov.directory = app
     '';
   };
 
