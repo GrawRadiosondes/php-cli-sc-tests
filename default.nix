@@ -1,7 +1,9 @@
 {
-  pkgs ? import <nixpkgs> {system = "x86_64-linux";},
+  pkgs ? import <nixpkgs> {},
   imageTag ? "latest",
 }: let
+  system = pkgs.stdenv.hostPlatform.system;
+
   phpWithExts = pkgs.php85.buildEnv {
     extensions = {
       enabled,
@@ -33,10 +35,21 @@
     cp -r ${./sounding-center/sail/nginx/conf.d}/* $out/etc/nginx/conf.d/
   '';
 
+  debianBases = {
+    "x86_64-linux" = {
+      digest = "sha256:85dfcffff3c1e193877f143d05eaba8ae7f3f95cb0a32e0bc04a448077e1ac69";
+      sha256 = "sha256-ftFPjbNU6RY80ax14YcfDKR/swoni7MLLgVYfXjV01w=";
+    };
+    "aarch64-linux" = {
+      digest = "sha256:YOUR_ARM64_DEBIAN_DIGEST_HERE";
+      sha256 = "sha256-YOUR_ARM64_NIX_HASH_HERE";
+    };
+  };
+
   debianBase = pkgs.dockerTools.pullImage {
     imageName = "debian";
-    imageDigest = "sha256:85dfcffff3c1e193877f143d05eaba8ae7f3f95cb0a32e0bc04a448077e1ac69";
-    sha256 = "sha256-ftFPjbNU6RY80ax14YcfDKR/swoni7MLLgVYfXjV01w=";
+    imageDigest = debianBases.${system}.digest;
+    sha256 = debianBases.${system}.sha256;
   };
 
   myPackages = with pkgs; [
@@ -61,7 +74,7 @@
 in
   pkgs.dockerTools.buildLayeredImage {
     name = "docker.io/grawradiosondes/php-cli-sc-tests";
-    tag = imageTag;
+    tag = "${imageTag}-${system}";
     maxLayers = 15;
     fromImage = debianBase;
 
