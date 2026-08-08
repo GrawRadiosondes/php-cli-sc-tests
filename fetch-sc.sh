@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # clone or pull the latest version
-readonly repo="sounding-center"
+readonly repo="grawgo"
 if cd $repo; then
   git reset --hard HEAD
   git pull

@@ -32,7 +32,7 @@
 
   nginxConf = pkgs.runCommand "nginx-conf" {} ''
     mkdir -p $out/etc/nginx/conf.d
-    cp -r ${./sounding-center/sail/nginx/conf.d}/* $out/etc/nginx/conf.d/
+    cp -r ${./grawgo/sail/nginx/conf.d}/* $out/etc/nginx/conf.d/
   '';
 
   debianBases = {

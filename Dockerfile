@@ -103,9 +103,9 @@ RUN mkcert -key-file /etc/nginx/certs/soketi-key.pem -cert-file /etc/nginx/certs
 RUN mkcert -key-file /etc/nginx/certs/localhost-key.pem -cert-file /etc/nginx/certs/localhost.pem localhost coverage.localhost
 
 # configure nginx
-COPY sounding-center/sail/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
-COPY sounding-center/sail/nginx/conf.d/localhost.conf /etc/nginx/conf.d/localhost.conf
-COPY sounding-center/sail/nginx/conf.d/soketi.conf /etc/nginx/conf.d/soketi.conf
+COPY grawgo/sail/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
+COPY grawgo/sail/nginx/conf.d/localhost.conf /etc/nginx/conf.d/localhost.conf
+COPY grawgo/sail/nginx/conf.d/soketi.conf /etc/nginx/conf.d/soketi.conf
 
 
 #####################
