@@ -24,10 +24,11 @@ RUN apt install -y libicu-dev
 RUN apt install -y libjpeg-dev
 RUN apt install -y libpng-dev
 RUN apt install -y libpq-dev
+RUN apt install -y libwebp-dev
 RUN apt install -y libzip-dev
 
 # install php extensions
-RUN docker-php-ext-configure gd --with-jpeg
+RUN docker-php-ext-configure gd --with-jpeg --with-webp
 RUN docker-php-ext-install -j$(nproc) \
     bcmath \
     gd \
