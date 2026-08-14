@@ -74,7 +74,7 @@
 in
   pkgs.dockerTools.buildLayeredImage {
     name = "docker.io/grawradiosondes/php-cli-sc-tests";
-    tag = "${imageTag}-${system}";
+    tag = imageTag;
     maxLayers = 15;
     fromImage = debianBase;
 
