@@ -63,7 +63,7 @@
     gnumake
     mkcert
     nginx
-    nodePackages.node-gyp
+    node-gyp
     nodejs
     nss.tools
     openssh
