@@ -45,10 +45,21 @@ check() {
 
 echo "smoke testing ${IMAGE}"
 
-# Reported on every run so a layer creeping back in is visible rather than inferred. This is
-# the uncompressed size; the ~543 MB the old image was measured at is a compressed figure, so
-# the two are not directly comparable — what matters is the trend across runs.
-printf 'uncompressed size: %s MB\n' "$(($(docker image inspect --format '{{.Size}}' "$IMAGE") / 1000 / 1000))"
+# Reported on every run so a layer creeping back in is visible rather than inferred.
+#
+# Both figures, because only one of them answers the question anyone actually asks. What a
+# registry stores — and what four CI jobs pull per push — is the compressed size, and the
+# predecessor php-cli-sc-tests:latest measured 543 MB that way (14 layers, summed from its
+# manifest). `docker image inspect` reports the uncompressed size, which is roughly 3x larger
+# and comparing the two would flatter this image by a factor of three.
+#
+# The compressed figure is approximate: docker save tars the layers uncompressed and this
+# gzips the whole stream, where a registry gzips each layer separately. Close enough to
+# compare against 543 MB and to see which direction a change moved it.
+printf 'uncompressed size:          %s MB\n' \
+    "$(($(docker image inspect --format '{{.Size}}' "$IMAGE") / 1000 / 1000))"
+printf 'compressed size (approx):   %s MB   (predecessor: 543 MB)\n' \
+    "$(($(docker save "$IMAGE" | gzip -1 -c | wc -c) / 1000 / 1000))"
 
 echo
 echo "tooling"
