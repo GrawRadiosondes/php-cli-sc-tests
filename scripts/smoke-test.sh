@@ -45,6 +45,11 @@ check() {
 
 echo "smoke testing ${IMAGE}"
 
+# Reported on every run so a layer creeping back in is visible rather than inferred. This is
+# the uncompressed size; the ~543 MB the old image was measured at is a compressed figure, so
+# the two are not directly comparable — what matters is the trend across runs.
+printf 'uncompressed size: %s MB\n' "$(($(docker image inspect --format '{{.Size}}' "$IMAGE") / 1000 / 1000))"
+
 echo
 echo "tooling"
 for tool in "php --version" "composer --version" "bun --version" "node --version" "git --version"; do
