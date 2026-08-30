@@ -19,9 +19,15 @@ fi
 BUILT_EXTENSIONS=(bcmath gd intl mysqli pcntl pdo_mysql pdo_pgsql pgsql sockets zip)
 
 # Compiled into php:*-cli, so nothing in the Dockerfile installs them — but grawgo's
-# composer.json requires them all the same (ext-sqlite3 carries the whole sqlite_testing
-# suite). Asserted so a base image that stops shipping one fails here and not in grawgo.
-BUNDLED_EXTENSIONS=(curl fileinfo mbstring pdo pdo_sqlite sqlite3 xml)
+# composer.lock requires them all the same, directly or through a dependency (ext-sqlite3
+# and pdo_sqlite carry the whole sqlite_testing suite). Asserted so a base image that quietly
+# stops shipping one fails here instead of in grawgo. This is the same set grawgo's
+# `composer check-platform-reqs` step walks, minus the extensions installed above.
+BUNDLED_EXTENSIONS=(
+    ctype curl date dom fileinfo filter hash iconv json libxml mbstring openssl pcre
+    pdo pdo_sqlite phar Reflection session SimpleXML sqlite3 tokenizer xml xmlreader
+    xmlwriter zlib
+)
 
 failed=0
 
