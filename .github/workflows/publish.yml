@@ -30,7 +30,7 @@ env:
 
 jobs:
   image:
-    runs-on: ubuntu-latest
+    runs-on: ephemeral-runners
     permissions:
       contents: write # create the version tag
     steps:
@@ -63,7 +63,10 @@ jobs:
           context: .
           platforms: linux/amd64
           load: true
-          tags: grawgo-ci:candidate
+          # Run-unique, not a fixed "candidate": on a self-hosted runner the docker daemon can be
+          # shared between jobs, and two concurrent runs holding the same local tag would smoke
+          # test — or push — each other's image. Removed again by the cleanup step below.
+          tags: grawgo-ci:${{ github.run_id }}
           # Only main and the scheduled rebuild write cache; pull requests read it. Writing
           # from every pull request would thrash the cache budget.
           cache-from: type=gha,scope=image
@@ -71,7 +74,7 @@ jobs:
           provenance: false
           sbom: false
 
-      - run: scripts/smoke-test.sh grawgo-ci:candidate
+      - run: scripts/smoke-test.sh grawgo-ci:${{ github.run_id }}
 
       - if: github.event_name != 'pull_request'
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
@@ -98,10 +101,19 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.value }}
         run: |
-          docker tag grawgo-ci:candidate "${IMAGE}:${VERSION}"
-          docker tag grawgo-ci:candidate "${IMAGE}:latest"
+          docker tag "grawgo-ci:${{ github.run_id }}" "${IMAGE}:${VERSION}"
+          docker tag "grawgo-ci:${{ github.run_id }}" "${IMAGE}:latest"
           docker push "${IMAGE}:${VERSION}"
           docker push "${IMAGE}:latest"
+
+      # ubuntu-latest threw the whole VM away; a self-hosted host keeps what a job leaves behind,
+      # and this image is well over a gigabyte. Untagged layers are still reachable through the
+      # buildx cache, so a later run rebuilds from cache rather than from scratch.
+      - name: clean up local images
+        if: always()
+        run: |
+          docker rmi -f "grawgo-ci:${{ github.run_id }}" || true
+          docker rmi -f "${IMAGE}:${{ steps.version.outputs.value }}" "${IMAGE}:latest" || true
 
       - name: summary
         env:
