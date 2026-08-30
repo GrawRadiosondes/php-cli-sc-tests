@@ -1,0 +1,118 @@
+name: publish
+
+on:
+  push:
+    branches:
+      - main
+  # Not in the brief, but this is what makes "land it through a pull request" mean something:
+  # the same build and the same smoke test run on the pull request, with every push step
+  # skipped. A Dockerfile change is verified before it can reach anyone.
+  pull_request:
+  # The image exists to be stable, which means nothing bumps it on its own. A weekly rebuild
+  # is how base-image security patches actually get in — each one becomes a new immutable tag
+  # and reaches grawgo as a Renovate pull request that has to go green first.
+  schedule:
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Keyed on the sha rather than the ref: with a ref-wide group GitHub keeps at most one queued
+# run and cancels the previously pending one, which would silently drop a merged commit's
+# publish. Pull requests are the exception — there superseding a run is the point.
+concurrency:
+  group: publish-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  IMAGE: docker.io/grawradiosondes/grawgo-ci
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the version tag
+    steps:
+      # Before checkout on purpose: a missing credential has to cost three seconds and must
+      # never leave a git tag behind with no image to go with it.
+      - name: check registry credentials
+        if: github.event_name != 'pull_request'
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [ -z "$DOCKERHUB_USERNAME" ] || [ -z "$DOCKERHUB_TOKEN" ]; then
+            echo "::error::DOCKERHUB_USERNAME / DOCKERHUB_TOKEN are not set"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # next-version.sh needs every tag to pick the next number
+
+      - id: version
+        run: echo "value=$(scripts/next-version.sh)" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      # Built and loaded, not pushed. The smoke test below runs against these exact bits and
+      # the push further down re-tags them, so nothing untested can reach the registry.
+      - uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          platforms: linux/amd64
+          load: true
+          tags: grawgo-ci:candidate
+          # Only main and the scheduled rebuild write cache; pull requests read it. Writing
+          # from every pull request would thrash the cache budget.
+          cache-from: type=gha,scope=image
+          cache-to: ${{ github.event_name != 'pull_request' && 'type=gha,scope=image,mode=max' || '' }}
+          provenance: false
+          sbom: false
+
+      - run: scripts/smoke-test.sh grawgo-ci:candidate
+
+      - if: github.event_name != 'pull_request'
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # The tag goes up before the image: a tag with no image is a five-second fix, an image
+      # on a version number nothing records is a silent collision with the next publish.
+      - name: tag ${{ steps.version.outputs.value }}
+        if: github.event_name != 'pull_request'
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$VERSION" -m "$VERSION"
+          git push origin "$VERSION"
+
+      # :latest is kept only so the old consumers that never pinned keep working. Everything
+      # that matters resolves the immutable <semver> tag.
+      - name: push ${{ steps.version.outputs.value }}
+        if: github.event_name != 'pull_request'
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          docker tag grawgo-ci:candidate "${IMAGE}:${VERSION}"
+          docker tag grawgo-ci:candidate "${IMAGE}:latest"
+          docker push "${IMAGE}:${VERSION}"
+          docker push "${IMAGE}:latest"
+
+      - name: summary
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          {
+            echo "### ${IMAGE}"
+            echo
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              echo "Built and smoke tested. Not published — next version would be \`${VERSION}\`."
+            else
+              echo "Published \`${IMAGE}:${VERSION}\` (also tagged \`latest\`)."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

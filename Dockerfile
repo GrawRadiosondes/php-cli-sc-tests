@@ -1,119 +1,92 @@
-FROM php:8.5-cli
+# CI image for GrawRadiosondes/grawgo.
+#
+# Built and published by .github/workflows/publish.yml as
+# docker.io/grawradiosondes/grawgo-ci:<semver>. See README.md for the contract.
+#
+# Scope is deliberately narrow: everything four grawgo CI jobs need before
+# `composer install` (bun, vite build, pest, phpstan, phpcs) and nothing else.
+# No nginx, no mkcert, no baked certificates, no browser binaries — those either
+# belong to the Sail compose stack or are installed at job runtime.
+#
+# Every input is pinned by digest so a rebuild is reproducible and Renovate can
+# open a bump pull request for each one.
 
-#########################################################
-## prepare package manager and install general tooling ##
-#########################################################
+FROM php:8.5-cli@sha256:0e17ef0527f296b85bfe4cfb5219b29cafc37224857ed73d28628ea142930ac8
 
-# apt update & apt-utils
-RUN apt update
-RUN apt install -y apt-utils
+# One apt transaction: the index can never go stale relative to the installs
+# below it, which is what the previous ~20 separate `apt install` layers risked.
+#
+#   git                       actions/checkout and composer's VCS downloader
+#   unzip                     composer --prefer-dist (avoids the ZipArchive fallback notice)
+#   python3                   node-gyp, which tree-sitter builds with
+#   lib*-dev                  build inputs for the extensions in the next layer:
+#                             icu → intl, jpeg/png/webp → gd, pq → pdo_pgsql+pgsql, zip → zip
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        git \
+        libicu-dev \
+        libjpeg-dev \
+        libpng-dev \
+        libpq-dev \
+        libwebp-dev \
+        libzip-dev \
+        python3 \
+        unzip \
+    && rm -rf /var/lib/apt/lists/*
 
-# install git
-RUN apt install -y git
+# Tracks the ext-* requires in grawgo's composer.json. `composer check-platform-reqs`
+# runs as the first step of grawgo's build job and fails loudly if the two drift.
+#
+# curl, fileinfo, mbstring, xml, sqlite3, pdo_sqlite and pdo are already compiled
+# into php:*-cli and must not be listed here — docker-php-ext-install would fail on
+# them. ext-sqlite3 in particular is what grawgo's whole `sqlite_testing` suite runs
+# on; its absence from this list is inherited, not an oversight.
+RUN docker-php-ext-configure gd --with-jpeg --with-webp \
+    && docker-php-ext-install -j"$(nproc)" \
+        bcmath \
+        gd \
+        intl \
+        mysqli \
+        pcntl \
+        pdo_mysql \
+        pdo_pgsql \
+        pgsql \
+        sockets \
+        zip
 
-# install nmap & tree (debug purposes)
-RUN apt install -y nmap tree
+# pcov, not xdebug. CI only ever collects line coverage (`pest --coverage --min=100`)
+# and never step-debugs, and pcov is substantially faster at exactly that. The nix
+# build path made this choice in March 2026; the Dockerfile never followed.
+RUN pecl install pcov \
+    && docker-php-ext-enable pcov \
+    && rm -rf /tmp/pear
 
+RUN { \
+        echo 'memory_limit = 1G'; \
+        echo 'pcov.enabled = 1'; \
+        echo 'pcov.directory = app'; \
+    } > "$PHP_INI_DIR/conf.d/grawgo-ci.ini"
 
-###############
-## setup php ##
-###############
+COPY --from=composer:2@sha256:4d71c3c2109c61d5415544264b59ad4087e4c5b7244481723664138fd36d5040 /usr/bin/composer /usr/local/bin/composer
 
-# install php extension dependencies
-RUN apt install -y libicu-dev
-RUN apt install -y libjpeg-dev
-RUN apt install -y libpng-dev
-RUN apt install -y libpq-dev
-RUN apt install -y libwebp-dev
-RUN apt install -y libzip-dev
-
-# install php extensions
-RUN docker-php-ext-configure gd --with-jpeg --with-webp
-RUN docker-php-ext-install -j$(nproc) \
-    bcmath \
-    gd \
-    intl \
-    mysqli \
-    pcntl \
-    pdo_mysql \
-    pdo_pgsql \
-    pgsql \
-    sockets \
-    zip
-
-# install composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-
-# install xdebug
-RUN pecl install xdebug
-RUN docker-php-ext-enable xdebug
-RUN echo xdebug.mode=coverage > "$PHP_INI_DIR/conf.d/xdebug.ini"
-
-# increase memory limit
-RUN echo 'memory_limit = 1G' >> "$PHP_INI_DIR/conf.d/memory-limit.ini"
-
-
-###############
-## setup bun ##
-###############
-
-COPY --from=oven/bun:latest /usr/local/bin/bun /usr/local/bin/bun
+COPY --from=oven/bun:1@sha256:5ff609364c049b54eb0ff560ec96319729a972078ef2c755d758f0c6ef89c2d6 /usr/local/bin/bun /usr/local/bin/bun
 RUN ln -s /usr/local/bin/bun /usr/local/bin/bunx
 
-# node-gyp is required by tree-sitter and needs python3 and nodejs/npm
-RUN curl -sL https://deb.nodesource.com/setup_lts.x  | bash -
-RUN apt install -y nodejs
-RUN apt install -y python3
-RUN bun install -g node-gyp
+# node is here only because node-gyp (used when tree-sitter builds) shells out to it;
+# grawgo's own scripts all run under bun. The major is pinned rather than `setup_lts.x`
+# so a new LTS cannot roll into the image unannounced.
+RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/* \
+    && bun install -g node-gyp
 
-
-########################
-## install playwright ##
-########################
-
-RUN bunx playwright install --with-deps
-
-
-########################################
-## setup nginx as https reverse proxy ##
-########################################
-
-# install nginx
-RUN apt install -y gnupg2
-RUN apt install -y ca-certificates
-RUN apt install -y lsb-release
-RUN apt install -y dirmngr
-RUN apt install -y apt-transport-https
-RUN curl -fSsL https://nginx.org/keys/nginx_signing.key | gpg --dearmor | tee /usr/share/keyrings/nginx-archive-keyring.gpg > /dev/null
-RUN echo "deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] http://nginx.org/packages/mainline/debian `lsb_release -cs` nginx" | tee /etc/apt/sources.list.d/nginx.list
-RUN echo "Package: *\nPin: origin nginx.org\nPin: release o=nginx\nPin-Priority: 900\n" | tee /etc/apt/preferences.d/99nginx
-RUN apt update
-RUN apt install -y nginx
-
-# setup mkcert
-RUN apt install -y libnss3-tools
-RUN curl -JLO "https://dl.filippo.io/mkcert/latest?for=linux/amd64"
-RUN chmod +x mkcert-v*-linux-amd64
-RUN cp mkcert-v*-linux-amd64 /usr/local/bin/mkcert
-RUN mkcert -install
-RUN update-ca-certificates --fresh
-
-# generate certs
-RUN mkdir /etc/nginx/certs
-RUN mkcert -key-file /etc/nginx/certs/soketi-key.pem -cert-file /etc/nginx/certs/soketi.pem soketi
-RUN mkcert -key-file /etc/nginx/certs/localhost-key.pem -cert-file /etc/nginx/certs/localhost.pem localhost coverage.localhost
-
-# configure nginx
-COPY grawgo/sail/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
-COPY grawgo/sail/nginx/conf.d/localhost.conf /etc/nginx/conf.d/localhost.conf
-COPY grawgo/sail/nginx/conf.d/soketi.conf /etc/nginx/conf.d/soketi.conf
-
-
-#####################
-## finishing steps ##
-#####################
-
-# clear apt cache
-RUN apt clean && rm -rf /var/lib/apt/lists/*
-
-# if the nginx https reverse proxy is needed, just run `nginx` to start the deamon
+# Playwright's OS libraries only — not the browser binaries. `install-deps` needs root
+# and apt, so it belongs in the image; the chromium binary does not, because grawgo pins
+# playwright to an exact version (its renovate.json disables auto-bumps to keep NixOS devs
+# in lockstep with nixpkgs) and baking browsers would couple every playwright bump to an
+# image rebuild. grawgo's tests job installs the browser itself. Left unversioned on
+# purpose, matching grawgo's .devcontainer/Dockerfile: the dependency list is what is
+# wanted, not a particular playwright release.
+RUN apt-get update \
+    && bunx playwright install-deps \
+    && rm -rf /var/lib/apt/lists/*
