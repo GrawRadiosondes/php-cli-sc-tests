@@ -34,8 +34,13 @@ RUN apt-get update \
         unzip \
     && rm -rf /var/lib/apt/lists/*
 
-# Tracks the ext-* requires in grawgo's composer.json. `composer check-platform-reqs`
+# Tracks the platform requirements of grawgo's composer.lock — its own ext-* requires plus
+# the ones its dependencies pull in (ext-sockets arrives that way). `composer check-platform-reqs`
 # runs as the first step of grawgo's build job and fails loudly if the two drift.
+#
+# pcntl, pdo_mysql and pgsql are not required by the lock file. pcntl is what `pest --parallel`
+# needs; the other two are kept because dropping them buys nothing and would break any job that
+# ever points at a MySQL or a raw pgsql connection.
 #
 # curl, fileinfo, mbstring, xml, sqlite3, pdo_sqlite and pdo are already compiled
 # into php:*-cli and must not be listed here — docker-php-ext-install would fail on
