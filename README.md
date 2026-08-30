@@ -24,7 +24,8 @@ Also referenced by grawgo's parked `.devcontainer/devcontainer.json.later`.
 
 **In:** PHP 8.5 with `bcmath gd intl mysqli pcntl pdo_mysql pdo_pgsql pgsql sockets zip`,
 pcov, `memory_limit = 1G`, composer, bun, node + python3 + node-gyp (tree-sitter builds
-with it), git, and Playwright's OS dependencies.
+with it), git, and Playwright's OS dependencies **for chromium only** — bare `install-deps`
+also drags in the firefox and webkit stacks, for browsers nothing here launches.
 
 **Not in, on purpose:**
 

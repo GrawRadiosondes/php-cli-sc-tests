@@ -92,6 +92,11 @@ RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
 # image rebuild. grawgo's tests job installs the browser itself. Left unversioned on
 # purpose, matching grawgo's .devcontainer/Dockerfile: the dependency list is what is
 # wanted, not a particular playwright release.
+#
+# Scoped to chromium. Bare `install-deps` pulls the OS libraries for firefox and webkit too —
+# most of a gigabyte of GTK and multimedia stacks for browsers nothing here launches. grawgo's
+# tests job installs chromium and its suite runs headless Chrome; if a firefox or webkit suite
+# is ever added, add it here and the smoke test's launch check will hold it honest.
 RUN apt-get update \
-    && bunx playwright install-deps \
+    && bunx playwright install-deps chromium \
     && rm -rf /var/lib/apt/lists/*
