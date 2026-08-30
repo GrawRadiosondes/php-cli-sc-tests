@@ -53,13 +53,15 @@ echo "smoke testing ${IMAGE}"
 # manifest). `docker image inspect` reports the uncompressed size, which is roughly 3x larger
 # and comparing the two would flatter this image by a factor of three.
 #
-# The compressed figure is approximate: docker save tars the layers uncompressed and this
-# gzips the whole stream, where a registry gzips each layer separately. Close enough to
-# compare against 543 MB and to see which direction a change moved it.
+# The compressed figure is approximate, and the approximation cuts both ways: docker save tars
+# the layers uncompressed and this gzips the whole stream, where a registry gzips each layer
+# separately (slightly worse, having less context per stream). gzip's default level, not -1,
+# because that is what a registry uses — at -1 this reads ~15% high and a change can look like
+# it lost ground when it gained. Close enough to compare against 543 MB and to see direction.
 printf 'uncompressed size:          %s MB\n' \
     "$(($(docker image inspect --format '{{.Size}}' "$IMAGE") / 1000 / 1000))"
 printf 'compressed size (approx):   %s MB   (predecessor: 543 MB)\n' \
-    "$(($(docker save "$IMAGE" | gzip -1 -c | wc -c) / 1000 / 1000))"
+    "$(($(docker save "$IMAGE" | gzip -c | wc -c) / 1000 / 1000))"
 
 echo
 echo "tooling"
